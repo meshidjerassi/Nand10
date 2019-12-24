@@ -10,8 +10,12 @@ CLASS_VAR_DEC_OPEN = "<classVarDec>\n" + WRITE_KEYWORD
 CLASS_VAR_DEC_END = "</classVarDec>\n"
 SUBROUTINE_DEC_OPEN = "<subroutineDec>\n" + WRITE_KEYWORD
 SUBROUTINE_DEC_END = "</subroutineDec>\n"
+PARAM_LIST_OPEN = "<parameterList>\n"
+PARAM_LIST_END = "</parameterList>\n"
 SUBROUTINE_BODY_OPEN = "<subroutineBody>\n"
 SUBROUTINE_BODY_END = "</subroutineBody>\n"
+VAR_DEC_OPEN = "<varDec>\n"
+VAR_DEC_END = "</varDec>\n"
 STATEMENTS_OPEN = "<statements>\n"
 STATEMENTS_END = "</statements>\n"
 A_STATEMENT_OPEN = "<{}Statements>\n"
@@ -32,7 +36,6 @@ class CompilationEngine:
         self.tokenizer.advance()  # class
         self.tokenizer.advance()  # class name
         self.output.write(CLASS_OPEN.format(self.tokenizer.identifier()))
-        consts.VAR_TYPES.append(self.tokenizer.identifier())  # TODO: do I ever use this?
         self.tokenizer.advance()  # {
         while self.tokenizer.hasMoreTokens():
             self.tokenizer.advance()
@@ -82,7 +85,7 @@ class CompilationEngine:
         self.output.write(SUBROUTINE_DEC_END)
 
     def CompileVarDec(self):
-        # todo: verdec open
+        self.output.write(VAR_DEC_OPEN)
         self.output.write(WRITE_KEYWORD.format("var"))
         self.tokenizer.advance()  # type
         self._writeType()
@@ -94,6 +97,7 @@ class CompilationEngine:
             self.tokenizer.advance()  # varName
             self.output.write(WRITE_IDENTIFIER.format(self.tokenizer.identifier()))
             self.tokenizer.advance()  # , or var or statement
+        self.output.write(VAR_DEC_END)
 
     def _writeType(self):
         if self.tokenizer.tokenType() == "keyWord":
@@ -102,7 +106,7 @@ class CompilationEngine:
             self.output.write(WRITE_IDENTIFIER.format(self.tokenizer.identifier()))
 
     def CompileParameterList(self):
-        # todo: paramlist open
+        self.output.write(PARAM_LIST_OPEN)
         self.tokenizer.advance()  # type / statement
         if self.tokenizer.tokenType() == "identifier" or (
                 self.tokenizer.tokenType() == "keyWord" and self.tokenizer.keyWord in consts.VAR_TYPES):
@@ -113,6 +117,7 @@ class CompilationEngine:
                 self.tokenizer.advance()  # varName
                 self.output.write(WRITE_IDENTIFIER.format(self.tokenizer.identifier()))
                 self.tokenizer.advance()  # , or statement
+        self.output.write(PARAM_LIST_END)
 
     def CompileStatements(self):
         self.output.write(STATEMENTS_OPEN)
