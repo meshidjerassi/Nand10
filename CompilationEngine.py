@@ -15,7 +15,7 @@ class CompilationEngine:
         self.tokenizer.advance()  # class
         self.tokenizer.advance()  # class name
         self.output.write(CLASS_OPEN.format(self.tokenizer.identifier()))
-        gc.VAR_TYPES.append(self.tokenizer.identifier())
+        gc.VAR_TYPES.append(self.tokenizer.identifier())  # TODO: do I ever use this?
         self.tokenizer.advance()  # {
         while self.tokenizer.hasMoreTokens():
             self.tokenizer.advance()
@@ -42,4 +42,3 @@ class CompilationEngine:
             self.output.write(WRITE_IDENTIFIER.format(self.tokenizer.identifier()))
             self.tokenizer.advance()  # symbol
         self.output.write(WRITE_SYMBOL.format(";"))
-
