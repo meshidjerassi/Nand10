@@ -3,20 +3,23 @@ import LexicalElements as consts
 WRITE_KEYWORD = "<keyword>{}</keyword>\n"
 WRITE_SYMBOL = "<symbol>{}</symbol>\n"
 WRITE_IDENTIFIER = "<identifier>{}</identifier>\n"
+
 CLASS_OPEN = "<class>\n" + WRITE_KEYWORD.format("class") + WRITE_IDENTIFIER + WRITE_SYMBOL.format("{")
 CLASS_END = WRITE_SYMBOL.format("}") + "</class>\n"
 CLASS_VAR_DEC_OPEN = "<classVarDec>\n" + WRITE_KEYWORD
 CLASS_VAR_DEC_END = "</classVarDec>\n"
-SUBROUTINE_OPEN = "<subroutineDec>\n" + WRITE_KEYWORD
+SUBROUTINE_DEC_OPEN = "<subroutineDec>\n" + WRITE_KEYWORD
 SUBROUTINE_DEC_END = "</subroutineDec>\n"
 SUBROUTINE_BODY_OPEN = "<subroutineBody>\n"
 SUBROUTINE_BODY_END = "</subroutineBody>\n"
-SUBROUTINE_CALL_OPEN = "<subroutineCall>\n"
-SUBROUTINE_CALL_END = "</subroutineCall>\n"
 STATEMENTS_OPEN = "<statements>\n"
 STATEMENTS_END = "</statements>\n"
 A_STATEMENT_OPEN = "<{}Statements>\n"
 A_STATEMENT_END = "</{}Statements>\n"
+EXP_OPEN = "<expression>\n"
+EXP_END = "</expression>\n"
+
+# todo: term explist intconst stringconst
 
 
 class CompilationEngine:
@@ -56,7 +59,7 @@ class CompilationEngine:
         self.output.write(CLASS_VAR_DEC_END)
 
     def ComplieSubroutine(self):
-        self.output.write(SUBROUTINE_OPEN.format(self.tokenizer.keyWord()))
+        self.output.write(SUBROUTINE_DEC_OPEN.format(self.tokenizer.keyWord()))
         self.tokenizer.advance()  # retType
         self._writeType()
         self.tokenizer.advance()  # subRoutine name
@@ -79,6 +82,7 @@ class CompilationEngine:
         self.output.write(SUBROUTINE_DEC_END)
 
     def CompileVarDec(self):
+        # todo: verdec open
         self.output.write(WRITE_KEYWORD.format("var"))
         self.tokenizer.advance()  # type
         self._writeType()
@@ -98,6 +102,7 @@ class CompilationEngine:
             self.output.write(WRITE_IDENTIFIER.format(self.tokenizer.identifier()))
 
     def CompileParameterList(self):
+        # todo: paramlist open
         self.tokenizer.advance()  # type / statement
         if self.tokenizer.tokenType() == "identifier" or (
                 self.tokenizer.tokenType() == "keyWord" and self.tokenizer.keyWord in consts.VAR_TYPES):
@@ -133,12 +138,10 @@ class CompilationEngine:
         if self.tokenizer.symbol() == '[':
             self.output.write(WRITE_SYMBOL.format("["))
             self.CompileExpression()
-            self.tokenizer.advance()  # ] todo: check if delete
             self.output.write(WRITE_SYMBOL.format("]"))
             self.tokenizer.advance()  # =
         self.output.write(WRITE_SYMBOL.format("="))
         self.CompileExpression()
-        self.tokenizer.advance()  # ; todo: check if delete
         self.output.write(WRITE_SYMBOL.format(";"))
         self.tokenizer.advance()
         self.output.write(A_STATEMENT_END.format("let"))
@@ -149,7 +152,6 @@ class CompilationEngine:
         self.tokenizer.advance()  # (
         self.output.write(WRITE_SYMBOL.format("("))
         self.CompileExpression()
-        self.tokenizer.advance()  # ) todo: check if delete
         self.output.write(WRITE_SYMBOL.format(")"))
         self.tokenizer.advance()  # {
         self.output.write(WRITE_SYMBOL.format("{"))
@@ -171,7 +173,6 @@ class CompilationEngine:
         self.tokenizer.advance()  # (
         self.output.write(WRITE_SYMBOL.format("("))
         self.CompileExpression()
-        self.tokenizer.advance()  # ) todo: check if delete
         self.output.write(WRITE_SYMBOL.format(")"))
         self.tokenizer.advance()  # {
         self.output.write(WRITE_SYMBOL.format("{"))
@@ -183,7 +184,6 @@ class CompilationEngine:
     def CompileDo(self):
         self.output.write(A_STATEMENT_OPEN.format("do"))
         self.output.write(WRITE_KEYWORD.format("do"))
-        self.output.write(SUBROUTINE_CALL_OPEN)
         self.tokenizer.advance()  # subroutine name / class name/var name
         if self.tokenizer.identifier() not in self.subRoutines:
             self.output.write(WRITE_IDENTIFIER.format(self.tokenizer.identifier()))
@@ -195,7 +195,6 @@ class CompilationEngine:
         self.CompileExpressionList()
         self.tokenizer.advance()  # ) todo: check if delete
         self.output.write(WRITE_SYMBOL.format(")"))
-        self.output.write(SUBROUTINE_CALL_END)
         self.tokenizer.advance()  # ;
         self.output.write(WRITE_SYMBOL.format(";"))
         self.output.write(A_STATEMENT_END.format("do"))
@@ -204,28 +203,19 @@ class CompilationEngine:
         self.output.write(A_STATEMENT_OPEN.format("return"))
         self.output.write(WRITE_KEYWORD.format("return"))
         self.tokenizer.advance()  # statement or ;
-        if self.tokenizer.tokenType()!="symbol" or self.tokenizer.symbol() != ';':
+        if self.tokenizer.tokenType() != "symbol" or self.tokenizer.symbol() != ';':
             self.CompileExpression()
-        self.tokenizer.advance()  # ; todo: check if delete
         self.output.write(WRITE_SYMBOL.format(";"))
         self.output.write(A_STATEMENT_END.format("return"))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def CompileExpression(self):
+        self.output.write(EXP_OPEN)
+        self.CompileTerm()
+        self.tokenizer.advance()  # op or not todo: check if delete
+        while self.tokenizer.tokenType() == "symbol" and self.tokenizer.symbol() in consts.OP:
+            # todo: escaping of certain chars
+            self.output.write(WRITE_SYMBOL.format(self.tokenizer.symbol()))
+            self.tokenizer.advance()  # term
+            self.CompileTerm()
+            self.tokenizer.advance()  # symbol todo: check if delete
+        self.output.write(EXP_END)

@@ -11,6 +11,8 @@ CLASS_VARS = ["field", "static"]
 
 STATEMENTS = ["let", "do", "if", "while", "return"]
 
+OP = ["+", "-", "*", "/", "&", "|", "<", ">", "="]
+
 def is_string_const(s):
     if s[0] == "\"" and s[-1] == "\"":
         return True
