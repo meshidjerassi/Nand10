@@ -3,6 +3,13 @@ KEYWORDS = ["class", "constructor", "function", "method", "field", "static", "va
 
 SYMBOL = ["(", ")", "{", "}", "[", "]", ".", ",", ";", "+", "-", "*", "/", "&", "|", "<", ">", "=", "~"]
 
+VAR_TYPES = ["int", "char", "boolean", "void"]
+
+SUB_ROUTINES = ["constructor", "function", "method"]
+
+CLASS_VARS = ["field", "static"]
+
+STATEMENTS = ["let", "do", "if", "while", "return"]
 
 def is_string_const(s):
     if s[0] == "\"" and s[-1] == "\"":
