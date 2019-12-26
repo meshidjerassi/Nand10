@@ -13,6 +13,8 @@ STATEMENTS = ["let", "do", "if", "while", "return"]
 
 OP = ["+", "-", "*", "/", "&", "|", "<", ">", "="]
 
+CONST_KW = ["true", "false", "null", "this"]
+
 def is_string_const(s):
     if s[0] == "\"" and s[-1] == "\"":
         return True
