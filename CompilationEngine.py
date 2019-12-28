@@ -1,12 +1,12 @@
 import LexicalElements as consts
 
-WRITE_KEYWORD = "<keyword>{}</keyword>\n"
-WRITE_SYMBOL = "<symbol>{}</symbol>\n"
-WRITE_IDENTIFIER = "<identifier>{}</identifier>\n"
-WRITE_INT = "<int_const>{}</int_const>\n"
-WRITE_STRING = "<string_const>{}</string_const>\n"
+WRITE_KEYWORD = "<keyword> {} </keyword>\n"
+WRITE_SYMBOL = "<symbol> {} </symbol>\n"
+WRITE_IDENTIFIER = "<identifier> {} </identifier>\n"
+WRITE_INT = "<integerConstant> {} </integerConstant>\n"
+WRITE_STRING = "<stringConstant> {} </stringConstant>\n"
 
-CLASS_OPEN = "<class>\n" + WRITE_KEYWORD.format("class") + WRITE_IDENTIFIER + WRITE_SYMBOL.format("{")
+CLASS_OPEN = "<class>\n" + WRITE_KEYWORD.format("class")
 CLASS_END = WRITE_SYMBOL.format("}") + "</class>\n"
 CLASS_VAR_DEC_OPEN = "<classVarDec>\n" + WRITE_KEYWORD
 CLASS_VAR_DEC_END = "</classVarDec>\n"
@@ -20,8 +20,8 @@ VAR_DEC_OPEN = "<varDec>\n"
 VAR_DEC_END = "</varDec>\n"
 STATEMENTS_OPEN = "<statements>\n"
 STATEMENTS_END = "</statements>\n"
-A_STATEMENT_OPEN = "<{}Statements>\n"
-A_STATEMENT_END = "</{}Statements>\n"
+A_STATEMENT_OPEN = "<{}Statement>\n"
+A_STATEMENT_END = "</{}Statement>\n"
 EXP_OPEN = "<expression>\n"
 EXP_END = "</expression>\n"
 TERM_OPEN = "<term>\n"
@@ -37,17 +37,19 @@ class CompilationEngine:
         self.subRoutines = []
 
     def CompileClass(self):
+        self.output.write(CLASS_OPEN)
         self.tokenizer.advance()  # class
         self.tokenizer.advance()  # class name
-        self.output.write(CLASS_OPEN.format(self.tokenizer.identifier()))
+        self.output.write(WRITE_IDENTIFIER.format(self.tokenizer.identifier()))
         self.tokenizer.advance()  # {
+        self.output.write(WRITE_SYMBOL.format("{"))
         while self.tokenizer.hasMoreTokens():
             self.tokenizer.advance()
-            if self.tokenizer.tokenType() == "keyWord":
-                if self.tokenizer.keyWord in consts.CLASS_VARS:
+            if self.tokenizer.tokenType() == "keyword":
+                if self.tokenizer.keyWord() in consts.CLASS_VARS:
                     self.CompileClassVarDec()
-                elif self.tokenizer.keyWord in consts.SUB_ROUTINES:
-                    self.ComplieSubroutine()
+                elif self.tokenizer.keyWord() in consts.SUB_ROUTINES:
+                    self.CompileSubroutine()
         self.output.write(CLASS_END)
 
     def CompileClassVarDec(self):
@@ -57,7 +59,7 @@ class CompilationEngine:
         self.tokenizer.advance()  # varName
         self.output.write(WRITE_IDENTIFIER.format(self.tokenizer.identifier()))
         self.tokenizer.advance()  # , or ;
-        while self.tokenizer.tokenType() == "symbol" and self.tokenizer.symbol == ',':
+        while self.tokenizer.tokenType() == "symbol" and self.tokenizer.symbol() == ',':
             self.output.write(WRITE_SYMBOL.format(","))
             self.tokenizer.advance()  # varName
             self.output.write(WRITE_IDENTIFIER.format(self.tokenizer.identifier()))
@@ -65,7 +67,7 @@ class CompilationEngine:
         self.output.write(WRITE_SYMBOL.format(";"))
         self.output.write(CLASS_VAR_DEC_END)
 
-    def ComplieSubroutine(self):
+    def CompileSubroutine(self):
         self.output.write(SUBROUTINE_DEC_OPEN.format(self.tokenizer.keyWord()))
         self.tokenizer.advance()  # retType
         self._writeType()
@@ -73,15 +75,15 @@ class CompilationEngine:
         self.output.write(WRITE_IDENTIFIER.format(self.tokenizer.identifier()))
         self.subRoutines.append(self.tokenizer.identifier())
         self.tokenizer.advance()  # (
+
         self.output.write(WRITE_SYMBOL.format("("))
         self.CompileParameterList()
-        self.tokenizer.advance()  # )
         self.output.write(WRITE_SYMBOL.format(")"))
         self.output.write(SUBROUTINE_BODY_OPEN)
         self.tokenizer.advance()  # {
         self.output.write(WRITE_SYMBOL.format("{"))
         self.tokenizer.advance()  # var / statement
-        while self.tokenizer.tokenType() == "keyWord" and self.tokenizer.keyWord == "var":
+        while self.tokenizer.tokenType() == "keyword" and self.tokenizer.keyWord() == "var":
             self.CompileVarDec()
         self.CompileStatements()
         self.output.write(WRITE_SYMBOL.format("}"))
@@ -94,7 +96,7 @@ class CompilationEngine:
         self.tokenizer.advance()  # type
         self._writeType()
         self.tokenizer.advance()  # var name
-        self.output.write(WRITE_IDENTIFIER.format(self.tokenizer.identifier))
+        self.output.write(WRITE_IDENTIFIER.format(self.tokenizer.identifier()))
         self.tokenizer.advance()  # , or var or statement
         while self.tokenizer.tokenType() == "symbol":
             self.output.write(WRITE_SYMBOL.format(","))
@@ -104,7 +106,7 @@ class CompilationEngine:
         self.output.write(VAR_DEC_END)
 
     def _writeType(self):
-        if self.tokenizer.tokenType() == "keyWord":
+        if self.tokenizer.tokenType() == "keyword":
             self.output.write(WRITE_KEYWORD.format(self.tokenizer.keyWord()))
         else:
             self.output.write(WRITE_IDENTIFIER.format(self.tokenizer.identifier()))
@@ -113,11 +115,15 @@ class CompilationEngine:
         self.output.write(PARAM_LIST_OPEN)
         self.tokenizer.advance()  # type / statement
         if self.tokenizer.tokenType() == "identifier" or (
-                self.tokenizer.tokenType() == "keyWord" and self.tokenizer.keyWord in consts.VAR_TYPES):
+                self.tokenizer.tokenType() == "keyword" and self.tokenizer.keyWord() in consts.VAR_TYPES):
             self._writeType()
+            self.tokenizer.advance()  # varName
+            self.output.write(WRITE_IDENTIFIER.format(self.tokenizer.identifier()))
             self.tokenizer.advance()  # , or statement
-            while self.tokenizer.tokenType() == "symbol":
+            while self.tokenizer.tokenType() == "symbol" and self.tokenizer.symbol() == ',':
                 self.output.write(WRITE_SYMBOL.format(","))
+                self.tokenizer.advance()  # type
+                self.output.write(WRITE_KEYWORD.format(self.tokenizer.keyWord()))
                 self.tokenizer.advance()  # varName
                 self.output.write(WRITE_IDENTIFIER.format(self.tokenizer.identifier()))
                 self.tokenizer.advance()  # , or statement
@@ -125,7 +131,7 @@ class CompilationEngine:
 
     def CompileStatements(self):
         self.output.write(STATEMENTS_OPEN)
-        while self.tokenizer.tokenType() == "keyWord" and self.tokenizer.keyWord in consts.STATEMENTS:
+        while self.tokenizer.tokenType() == "keyword" and self.tokenizer.keyWord() in consts.STATEMENTS:
             if self.tokenizer.keyWord() == "let":
                 self.CompileLet()
             elif self.tokenizer.keyWord() == "do":
@@ -150,6 +156,7 @@ class CompilationEngine:
             self.output.write(WRITE_SYMBOL.format("]"))
             self.tokenizer.advance()  # =
         self.output.write(WRITE_SYMBOL.format("="))
+        self.tokenizer.advance()
         self.CompileExpression()
         self.output.write(WRITE_SYMBOL.format(";"))
         self.tokenizer.advance()
@@ -167,7 +174,7 @@ class CompilationEngine:
         self.CompileStatements()
         self.output.write(WRITE_SYMBOL.format("}"))
         self.tokenizer.advance()
-        if self.tokenizer.tokenType() == "keyWord" and self.tokenizer.keyWord() == "else":
+        if self.tokenizer.tokenType() == "keyword" and self.tokenizer.keyWord() == "else":
             self.output.write(WRITE_KEYWORD.format("else"))
             self.tokenizer.advance()  # {
             self.output.write(WRITE_SYMBOL.format("{"))
@@ -194,13 +201,14 @@ class CompilationEngine:
         self.output.write(A_STATEMENT_OPEN.format("do"))
         self.output.write(WRITE_KEYWORD.format("do"))
         self.tokenizer.advance()  # subroutine name / class name/var name
-        if self.tokenizer.identifier() not in self.subRoutines:
-            self.output.write(WRITE_IDENTIFIER.format(self.tokenizer.identifier()))
-            self.tokenizer.advance()  # .
-            self.output.write(WRITE_SYMBOL.format("."))
         self.output.write(WRITE_IDENTIFIER.format(self.tokenizer.identifier()))
-        self.tokenizer.advance()  # (
-        self.output.write(WRITE_SYMBOL.format("("))
+        self.tokenizer.advance()  # . or (
+        self.output.write(WRITE_SYMBOL.format(self.tokenizer.symbol()))
+        if self.tokenizer.symbol() == '.':
+            self.tokenizer.advance()  # subroutine name
+            self.output.write(WRITE_IDENTIFIER.format(self.tokenizer.identifier()))
+            self.tokenizer.advance()  # (
+            self.output.write(WRITE_SYMBOL.format('('))
         self.tokenizer.advance()  # exp or )
         self.CompileExpressionList()
         self.output.write(WRITE_SYMBOL.format(")"))
@@ -223,21 +231,22 @@ class CompilationEngine:
         self.output.write(EXP_OPEN)
         self.CompileTerm()
         while self.tokenizer.tokenType() == "symbol" and self.tokenizer.symbol() in consts.OP:
-            # todo: escaping of certain chars
-            self.output.write(WRITE_SYMBOL.format(self.tokenizer.symbol()))
+            escapedSymbol = consts.HTML_TRANSLATOR[self.tokenizer.symbol()] \
+                if self.tokenizer.symbol() in consts.HTML_TRANSLATOR else self.tokenizer.symbol()
+            self.output.write(WRITE_SYMBOL.format(escapedSymbol))
             self.tokenizer.advance()  # term
             self.CompileTerm()
         self.output.write(EXP_END)
 
     def CompileTerm(self):
         self.output.write(TERM_OPEN)
-        if self.tokenizer.tokenType() == "int_const":
+        if self.tokenizer.tokenType() == "integerConstant":
             self.output.write(WRITE_INT.format(self.tokenizer.int_val()))
             self.tokenizer.advance()
-        elif self.tokenizer.tokenType() == "string_const":
+        elif self.tokenizer.tokenType() == "stringConstant":
             self.output.write(WRITE_STRING.format(self.tokenizer.string_val()))
             self.tokenizer.advance()
-        elif self.tokenizer.tokenType() == "keyWord":
+        elif self.tokenizer.tokenType() == "keyword":
             self.output.write(WRITE_KEYWORD.format(self.tokenizer.keyWord()))
             self.tokenizer.advance()
         elif self.tokenizer.tokenType() == "symbol":
@@ -247,13 +256,13 @@ class CompilationEngine:
                 self.CompileExpression()
                 self.output.write(WRITE_SYMBOL.format(')'))
                 self.tokenizer.advance()  # next thing
-            else:
+            elif self.tokenizer.symbol() in ("-", "~"):
                 self.tokenizer.advance()
                 self.CompileTerm()
         else:
             self.output.write(WRITE_IDENTIFIER.format(self.tokenizer.identifier()))
             self.tokenizer.advance()  # ( [ . or next thing (if var name)
-            if self.tokenizer.tokenType() == "symbol":
+            if self.tokenizer.tokenType() == "symbol" and self.tokenizer.symbol() in ("[", "(", "."):
                 self.output.write(WRITE_SYMBOL.format(self.tokenizer.symbol()))
                 if self.tokenizer.symbol() == '[':
                     self.tokenizer.advance()

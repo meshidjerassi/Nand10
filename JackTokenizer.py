@@ -1,13 +1,10 @@
-import sys
+import re
 import LexicalElements as le
 
-TAB = "\t"
-NEW_LINE = "\n"
-ASTRIX = '*'
-SLASH = '/'
-BACK_SLASH = '\\'
-KEYWORD = "keyword"
-SYMBOL = "symbol"
+NEW_LINE = '\n'
+COMMENT = "//"
+MULTI_LINE_COMMENT_START = "/*"
+MULTI_LINE_COMMENT_END = "*/"
 
 
 class JackTokenizer:
@@ -20,79 +17,77 @@ class JackTokenizer:
         constructor, creates an array of parsed lines from the given path
         :param f: opened file
         """
-        self.isComment = False
-        self.continuesComment = False
-        self.tokenized = []
-        line = f.readline()
+        self.index = -1
+        self.__tokenized = []
+        file = self.__readFile(f)
+        while self.__commentHandler(file, COMMENT, NEW_LINE):
+            file = self.__commentHandler(file, COMMENT, NEW_LINE)
+        file = file.replace(NEW_LINE, " ")
+        while self.__commentHandler(file, MULTI_LINE_COMMENT_START, MULTI_LINE_COMMENT_END):
+            file = self.__commentHandler(file, MULTI_LINE_COMMENT_START, MULTI_LINE_COMMENT_END)
+        self.__regexMaster(file)
+
+    def __readFile(self, file):
+        line = file.readline()
+        string = line
         while line:
-            self.lineHandler(line)
-            line = f.readline()
+            line = file.readline()
+            string += line + " " + NEW_LINE
+        return string
 
-    def lineHandler(self, line):
-        line = line.strip(NEW_LINE)
-        line = line.strip(TAB)
-
-        # Handles multiple lines comments
-        if len(line) == 0:
-            return
-        self.multiLineCommentHandler(line)
-        if self.isComment or self.continuesComment:
-            self.isComment = False
-            return
-        line = self.removeSubComment(line)
-        temp = ""
-        # for i in range(len(line)+1):
-        #     if le.is_keyword(temp):
-        #         self.tokenized.append((temp, KEYWORD))  # appending keyword with lexical element tuple
-        #         temp = ""
-        #     if le.is_symbol(temp):
-        #         self.tokenized.append((temp, SYMBOL))  # appending symbol with lexical element tuple
-        #         temp = ""
-        #     if i == len(line):
-        #         break
-        #     if len(temp)>=1:
-        #         if le.is_symbol(temp[-1]):
-        #             return #todo
-        #   temp += line[i]
-        return
-
-    def multiLineCommentHandler(self, line):
-        if not self.continuesComment:
-            if len(line) >= 2:
-                if line[0] == SLASH and line[1] == ASTRIX:
-                    if line[-1] == SLASH and line[-2] == ASTRIX:
-                        self.isComment = True
-                    else:
-                        self.continuesComment = True
+    def __commentHandler(self, file, start, end):
+        ind = file.find(start)
+        if ind == -1:
+            return ""
         else:
-            if line[-1] == SLASH and line[-2] == ASTRIX:
-                self.isComment = True
-                self.continuesComment = False
+            temp = file[:ind]
+            file = file[ind:]
+            ind = file.find(end)
+            file = temp + file[ind + len(end):]
+        return file
 
-    def removeSubComment(self, line):
-        if len(line) >= 2:
-            for i in range(len(line)-1):
-                if line[i] == line[i+1] == SLASH:
-                    return line[:i]
-        return line
+    def __regexMaster(self, file):
+        reg = le.regex_builder()
+        pattern = re.compile(reg)
+        while file:
+            m = re.match(pattern, file)
+            if m is not None:
+                for i in range(1, 5):
+                    if m.group() == m.group(i):
+                        self.__tokenized.append((m.group(), le.GROUP_DICT[i]))
+                file = file[m.span()[1]:]
+            else:
+                file = file[1:]
 
+    def hasMoreTokens(self):
+        return self.index < len(self.__tokenized)-1
 
+    def advance(self):
+        self.index += 1
 
+    def tokenType(self):
+        return self.__tokenized[self.index][1]
 
-def main():
-    with open(sys.argv[1]) as fp:
-        j = JackTokenizer(fp)
-        for i in range(len(j.tokenized)):
-            print("Token named: "+j.tokenized[i][0] + " typed: " + j.tokenized[i][1])
+    def keyWord(self):
+        if self.__tokenized[self.index][1] == le.GROUP_DICT[2]:
+            return self.__tokenized[self.index][0]
 
+    def symbol(self):
+        if self.__tokenized[self.index][1] == le.GROUP_DICT[3]:
+            ret = self.__tokenized[self.index][0]
+            if ret in le.HTML_TRANSLATOR:
+                return le.HTML_TRANSLATOR[ret]
+            return ret
 
+    def identifier(self):
+        if self.__tokenized[self.index][1] == le.GROUP_DICT[4]:
+            return self.__tokenized[self.index][0]
 
-if __name__ == "__main__":
-    main()
-#
-#
-#
-#
-#
+    def intVal(self):
+        if self.__tokenized[self.index][1] == le.GROUP_DICT[5]:
+            return self.__tokenized[self.index][0]
 
-
+    def stringVal(self):
+        if self.__tokenized[self.index][1] == le.GROUP_DICT[1]:
+            string = self.__tokenized[self.index][0]
+            return string[1:-1]
