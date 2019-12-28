@@ -52,7 +52,7 @@ class JackTokenizer:
         while file:
             m = re.match(pattern, file)
             if m is not None:
-                for i in range(1, 5):
+                for i in range(1, 6):
                     if m.group() == m.group(i):
                         self.__tokenized.append((m.group(), le.GROUP_DICT[i]))
                 file = file[m.span()[1]:]

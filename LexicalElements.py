@@ -11,7 +11,7 @@ CLASS_VARS = ["field", "static"]
 
 STATEMENTS = ["let", "do", "if", "while", "return"]
 
-OP = ["+", "-", "*", "/", "&", "|", "<", ">", "="]
+OP = ["+", "-", "*", "/", "&amp;", "|", "&gt;", "=", "&lt;", "&quot;"]
 
 CONST_KW = ["true", "false", "null", "this"]
 
@@ -23,7 +23,8 @@ REG_NUMBER = "[\\d]+"
 
 GROUP_DICT = {1: "stringConstant", 2: "keyword", 3: "symbol", 4: "identifier", 5: "integerConstant"}
 
-HTML_TRANSLATOR = {"<": "&lt", ">": "&gt", "\"": "&quot", "&": "&amp"}
+HTML_TRANSLATOR = {"<": "&lt;", ">": "&gt;", "\"": "&quot;", "&": "&amp;"}
+
 
 def regex_builder():
     reg = "(" + REG_STRING + ")"
@@ -35,31 +36,3 @@ def regex_builder():
         reg += symbol + "|"
     reg = reg[:-1] + ")|(" + REG_VAR_NAME + ")|(" + REG_NUMBER + ")"
     return reg
-
-def is_string_const(s):
-    if s[0] == "\"" and s[-1] == "\"":
-        return True
-    else:
-        return False
-
-
-def is_identifier(s):
-    if s[0] != "\"" and s[-1] != "\"":
-        if s[0].isdigit():
-            return False
-        else:
-            return True
-
-
-def is_symbol(s):
-    if s in SYMBOL:
-        return True
-    else:
-        return False
-
-
-def is_keyword(s):
-    if s in KEYWORDS:
-        return True
-    else:
-        return False

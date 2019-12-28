@@ -7,7 +7,7 @@ from sys import argv
 
 def main(path):
     """
-    Creates parser object and code writer object, transfers the relevant commands to the relevant methods.
+    Creates tokenizer and compilation engine objects and calls compile class on each.
     :param path: file path
     :return: void
     """
@@ -17,13 +17,11 @@ def main(path):
     else:
         directory.append(path)
     for file in directory:
-        f = open(file, 'r')
-        tokenizer = jt.JackTokenizer(f)
-        output = open(file[:-4] + "xml", 'w')
-        cEngine = ce.CompilationEngine(tokenizer, output)
-        cEngine.CompileClass()
-        output.close()
-        f.close()
+        with open(file, 'r') as f:
+            tokenizer = jt.JackTokenizer(f)
+            with open(file[:-4] + "xml", 'w') as output:
+                cEngine = ce.CompilationEngine(tokenizer, output)
+                cEngine.CompileClass()
 
 
 if __name__ == "__main__":
