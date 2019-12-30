@@ -1,3 +1,8 @@
+"""
+Our program parses a Jack file, breaks it down into it's 5 components and
+creates an XML file according to the tokenized types
+"""
+
 import glob
 import os
 import JackTokenizer as jt
