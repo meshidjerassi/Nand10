@@ -20,4 +20,5 @@ JackAnalyzer (exe)
 
 Remarks
 -------
-Our design uses object oriented programing in order to parse and translate multiple files from VM into ASM files.
+Our program parses a Jack file, breaks it down into it's 5 components and
+creates an XML file according to the tokenized types
